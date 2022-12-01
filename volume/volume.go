@@ -41,6 +41,34 @@ type Volume struct {
 // The returned volume will wrap a system handle and will consume system
 // resources until the volume is closed. It is the caller's responsibility to
 // close the volume when finished with it.
+
+func Open(path string) (*Volume, error) {
+	const (
+		access = 0
+		mode   = syscall.GENERIC_READ | syscall.GENERIC_WRITE
+
+		//access = syscall.GENERIC_READ
+		//mode   = syscall.FILE_SHARE_READ | syscall.FILE_SHARE_WRITE
+	)
+
+	h, err := volumeapi.Handle(path, access, mode)
+	if err != nil {
+		return nil, err
+	}
+
+	v := &Volume{
+		h: hsync.New(h),
+	}
+
+	err = v.init()
+	if err != nil {
+		v.Close()
+		return nil, err
+	}
+
+	return v, nil
+}
+
 func New(path string) (*Volume, error) {
 	const (
 		// access = 0
